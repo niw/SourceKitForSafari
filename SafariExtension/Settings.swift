@@ -100,7 +100,7 @@ final class Settings {
 
     private var userDefaults: UserDefaults? {
         guard let teamIdentifierPrefix = teamIdentifierPrefix else { return nil }
-        return UserDefaults(suiteName: "\(teamIdentifierPrefix).kishikawakatsumi.SourceKitForSafari")
+        return UserDefaults(suiteName: "\(teamIdentifierPrefix).com.kishikawakatsumi.SourceKitForSafari")
     }
 
     private init() {}

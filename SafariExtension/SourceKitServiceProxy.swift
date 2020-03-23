@@ -18,7 +18,7 @@ final class SourceKitServiceProxy {
     private var context: [String: String] {
         var context = [String: String]()
         guard let teamIdentifierPrefix = teamIdentifierPrefix,
-            let userDefaults = UserDefaults(suiteName: "\(teamIdentifierPrefix).kishikawakatsumi.SourceKitForSafari")
+            let userDefaults = UserDefaults(suiteName: "\(teamIdentifierPrefix).com.kishikawakatsumi.SourceKitForSafari")
             else { return context }
 
         if let serverPath = userDefaults.string(forKey: "sourcekit-lsp.serverPath") {
