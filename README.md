@@ -58,7 +58,7 @@ Hover over symbols in the source code; then, the documentation for that symbol a
 
 ## How it works
 
-SourceKit for Safari will automatically clone a GitHub repository to your local filesystem (`~/Library/Group Containers/27AEDK3C9F.com.kishikawakatsumi.SourceKitForSafari`) when you access there.
+SourceKit for Safari will automatically clone a GitHub repository to your local filesystem (`~/Library/Group Containers/$(TeamIdentifierPrefix).com.kishikawakatsumi.SourceKitForSafari`) when you access there.
 
 Then, when the source file is displayed on the browser, it automatically communicates with SourceKit-LSP to get information about the source code. Then show them with a popup on the browser.
 

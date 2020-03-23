@@ -6,6 +6,7 @@ import OSLog
 final class LanguageServer {
     static private var servers = [URL: LanguageServer]()
 
+    private let teamIdentifierPrefix: String
     private let resource: String
     private let slug: String
 
@@ -23,7 +24,8 @@ final class LanguageServer {
     private var isInitialized = false
     private let serverProcess = Process()
 
-    init(resource: String, slug: String) {
+    init(teamIdentifierPrefix: String, resource: String, slug: String) {
+        self.teamIdentifierPrefix = teamIdentifierPrefix
         self.resource = resource
         self.slug = slug
     }
@@ -40,7 +42,7 @@ final class LanguageServer {
 
         os_log("[initialize] server: %{public}s, SDK: %{public}s, target: %{public}s", log: log, type: .debug, "\(serverPath) \(SDKPath) \(target)")
 
-        let rootURI = Workspace.documentRoot(resource: resource, slug: slug)
+        let rootURI = Workspace.documentRoot(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
 
         connection.start(receiveHandler: Client())
         isInitialized = true
@@ -83,7 +85,7 @@ final class LanguageServer {
     func sendDidOpenNotification(context: [String : String], document: String, text: String) {
         os_log("[didOpen] document %{public}s", log: log, type: .debug, "\(document)")
 
-        let documentRoot = Workspace.documentRoot(resource: resource, slug: slug)
+        let documentRoot = Workspace.documentRoot(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
         let identifier = documentRoot.appendingPathComponent(document)
 
         let ext = identifier.pathExtension
@@ -117,7 +119,7 @@ final class LanguageServer {
     }
 
     func sendDocumentSymbolRequest(context: [String : String], document: String, completion: @escaping (Result<DocumentSymbolRequest.Response, ResponseError>) -> Void) {
-        let documentRoot = Workspace.documentRoot(resource: resource, slug: slug)
+        let documentRoot = Workspace.documentRoot(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
         let identifier = documentRoot.appendingPathComponent(document)
 
         let documentSymbolRequest = DocumentSymbolRequest(
@@ -129,7 +131,7 @@ final class LanguageServer {
     }
 
     func sendHoverRequest(context: [String : String], document: String, line: Int, character: Int, completion: @escaping (Result<HoverRequest.Response, ResponseError>) -> Void) {
-        let documentRoot = Workspace.documentRoot(resource: resource, slug: slug)
+        let documentRoot = Workspace.documentRoot(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
         let identifier = documentRoot.appendingPathComponent(document)
 
         let hoverRequest = HoverRequest(
@@ -142,7 +144,7 @@ final class LanguageServer {
     }
 
     func sendDefinitionRequest(context: [String : String], document: String, line: Int, character: Int, completion: @escaping (Result<DefinitionRequest.Response, ResponseError>) -> Void) {
-        let documentRoot = Workspace.documentRoot(resource: resource, slug: slug)
+        let documentRoot = Workspace.documentRoot(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
         let identifier = documentRoot.appendingPathComponent(document)
 
         let definitionRequest = DefinitionRequest(

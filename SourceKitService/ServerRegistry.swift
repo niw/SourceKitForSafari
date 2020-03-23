@@ -6,13 +6,13 @@ final class ServerRegistry {
 
     private init() {}
 
-    func get(resource: String, slug: String) -> LanguageServer {
+    func get(teamIdentifierPrefix: String, resource: String, slug: String) -> LanguageServer {
         let key = makeKey(host: resource, slug: slug)
         if let server = servers[key] {
             return server
         }
         
-        let server = LanguageServer(resource: resource, slug: slug)
+        let server = LanguageServer(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
         servers[key] = server
         return server
     }

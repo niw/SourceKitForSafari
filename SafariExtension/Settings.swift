@@ -88,7 +88,20 @@ final class Settings {
         }
     }
 
-    private var userDefaults: UserDefaults? { UserDefaults(suiteName: "27AEDK3C9F.kishikawakatsumi.SourceKitForSafari") }
+    private var teamIdentifierPrefix: String? {
+        if let task = SecTaskCreateFromSelf(nil),
+            let groups = SecTaskCopyValueForEntitlement(task, "com.apple.security.application-groups" as NSString, nil) as? [String],
+            let group = groups.first {
+            return group
+        } else {
+            return nil
+        }
+    }
+
+    private var userDefaults: UserDefaults? {
+        guard let teamIdentifierPrefix = teamIdentifierPrefix else { return nil }
+        return UserDefaults(suiteName: "\(teamIdentifierPrefix).kishikawakatsumi.SourceKitForSafari")
+    }
 
     private init() {}
 

@@ -17,7 +17,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     func sendInitalizeRequest(context: [String : String], resource: String, slug: String, reply: @escaping (Bool, [String : Any]) -> Void) {
         os_log("[SourceKitService] sendInitalizeRequest(resource: %{public}s, slug: %{public}s)", log: log, type: .debug, resource, slug)
 
-        let server = ServerRegistry.shared.get(resource: resource, slug: slug)
+        let server = ServerRegistry.shared.get(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
 
         server.sendInitializeRequest(context: context) {
             switch $0 {
@@ -30,7 +30,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     }
 
     func sendInitializedNotification(context: [String : String], resource: String, slug: String, reply: @escaping (Bool, [String : Any]) -> Void) {
-        let server = ServerRegistry.shared.get(resource: resource, slug: slug)
+        let server = ServerRegistry.shared.get(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
 
         server.sendInitializedNotification(context: context)
         reply(true, ["result": "success"])
@@ -39,7 +39,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     func sendDidOpenNotification(context: [String : String], resource: String, slug: String, path: String, text: String, reply: @escaping (Bool, [String : Any]) -> Void) {
         os_log("[SourceKitService] sendDidOpenNotification(slug: %{public}s, path: %{public}s)", log: log, type: .debug, slug, path)
 
-        let server = ServerRegistry.shared.get(resource: resource, slug: slug)
+        let server = ServerRegistry.shared.get(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
 
         server.sendDidOpenNotification(context: context, document: path, text: text)
         reply(true, ["result": "success"])
@@ -48,7 +48,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     func sendDocumentSymbolRequest(context: [String : String], resource: String, slug: String, path: String, reply: @escaping (Bool, [String : Any]) -> Void) {
         os_log("[SourceKitService] sendDocumentSymbolRequest(slug: %{public}s, path: %{public}s)", log: log, type: .debug, slug, path)
 
-        let server = ServerRegistry.shared.get(resource: resource, slug: slug)
+        let server = ServerRegistry.shared.get(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
 
         server.sendDocumentSymbolRequest(context: context, document: path) { [weak self] in
             guard let self = self else { return }
@@ -70,7 +70,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     }
 
     func sendHoverRequest(context: [String : String], resource: String, slug: String, path: String, line: Int, character: Int, reply: @escaping (Bool, [String : Any]) -> Void) {
-        let server = ServerRegistry.shared.get(resource: resource, slug: slug)
+        let server = ServerRegistry.shared.get(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
 
         server.sendHoverRequest(context: context, document: path, line: line, character: character) {
             switch $0 {
@@ -99,7 +99,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     }
 
     func sendDefinitionRequest(context: [String : String], resource: String, slug: String, path: String, line: Int, character: Int, reply: @escaping (Bool, [String : Any]) -> Void) {
-        let server = ServerRegistry.shared.get(resource: resource, slug: slug)
+        let server = ServerRegistry.shared.get(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
 
         server.sendDefinitionRequest(context: context, document: path, line: line, character: character) { [weak self] in
             guard let self = self else { return }
@@ -125,7 +125,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     func sendShutdownRequest(context: [String : String], resource: String, slug: String, reply: @escaping (Bool, [String : Any]) -> Void) {
         os_log("[SourceKitService] sendShutdownRequest(resource: %{public}s, slug: %{public}s)", log: log, type: .debug, resource, slug)
 
-        let server = ServerRegistry.shared.get(resource: resource, slug: slug)
+        let server = ServerRegistry.shared.get(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
 
         server.sendShutdownRequest(context: context) {
             switch $0 {
@@ -140,7 +140,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     func sendExitNotification(context: [String : String], resource: String, slug: String, reply: @escaping (Bool, [String : Any]) -> Void) {
         os_log("[SourceKitService] sendExitNotification(slug: %{public}s)", log: log, type: .debug, slug)
 
-        let server = ServerRegistry.shared.get(resource: resource, slug: slug)
+        let server = ServerRegistry.shared.get(teamIdentifierPrefix: teamIdentifierPrefix, resource: resource, slug: slug)
 
         server.sendExitNotification()
         ServerRegistry.shared.remove(resource: resource, slug: slug)
@@ -151,7 +151,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     func synchronizeRepository(repository: URL, force: Bool, reply: @escaping (Bool, URL?) -> Void) {
         guard let host = repository.host else { return }
 
-        let groupContainer = Workspace.root
+        let groupContainer = Workspace.root(teamIdentifierPrefix: teamIdentifierPrefix)
         let directory = groupContainer.appendingPathComponent(host).appendingPathComponent(repository.path).deletingPathExtension()
 
         if FileManager().fileExists(atPath: directory.path) && !force {
@@ -241,7 +241,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     func deleteLocalRepository(repository: URL, reply: @escaping (Bool, URL?) -> Void) {
         guard let host = repository.host else { return }
 
-        let groupContainer = Workspace.root
+        let groupContainer = Workspace.root(teamIdentifierPrefix: teamIdentifierPrefix)
         let directory = groupContainer.appendingPathComponent(host).appendingPathComponent(repository.path).deletingPathExtension()
 
         let fileCoordinator = NSFileCoordinator()
@@ -285,6 +285,16 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
             }
         }
         reply(false, "")
+    }
+
+    private var teamIdentifierPrefix: String {
+        if let task = SecTaskCreateFromSelf(nil),
+            let groups = SecTaskCopyValueForEntitlement(task, "com.apple.security.application-groups" as NSString, nil) as? [String],
+            let group = groups.first {
+            return group
+        } else {
+            abort()
+        }
     }
 
     private func encodeResponse(_ documentSymbol: DocumentSymbol) -> [String: Any] {
@@ -341,7 +351,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
     private func encodeResponse(_ locations: [Location]) -> [[String: Any]] {
         var response = [[String: Any]]()
         for location in locations {
-            guard location.uri.stringValue.contains(Workspace.root.absoluteString) else {
+            guard location.uri.stringValue.contains(Workspace.root(teamIdentifierPrefix: teamIdentifierPrefix).absoluteString) else {
                 continue
             }
 
@@ -359,7 +369,7 @@ class SourceKitService: NSObject, SourceKitServiceProtocol {
 
             response.append(
                 ["uri": location.uri.stringValue
-                    .replacingOccurrences(of: Workspace.root.absoluteString, with: "")
+                    .replacingOccurrences(of: Workspace.root(teamIdentifierPrefix: teamIdentifierPrefix).absoluteString, with: "")
                     .split(separator: "/")
                     .joined(separator: "/"),
                  "start": ["line": start.line, "character": start.utf16index],

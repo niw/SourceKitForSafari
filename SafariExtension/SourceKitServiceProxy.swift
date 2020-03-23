@@ -5,9 +5,21 @@ final class SourceKitServiceProxy {
     static let shared = SourceKitServiceProxy()
     private let queue = DispatchQueue(label: "xpc-queue")
 
+    private var teamIdentifierPrefix: String? {
+        if let task = SecTaskCreateFromSelf(nil),
+            let groups = SecTaskCopyValueForEntitlement(task, "com.apple.security.application-groups" as NSString, nil) as? [String],
+            let group = groups.first {
+            return group
+        } else {
+            return nil
+        }
+    }
+
     private var context: [String: String] {
         var context = [String: String]()
-        guard let userDefaults = UserDefaults(suiteName: "27AEDK3C9F.kishikawakatsumi.SourceKitForSafari") else { return context }
+        guard let teamIdentifierPrefix = teamIdentifierPrefix,
+            let userDefaults = UserDefaults(suiteName: "\(teamIdentifierPrefix).kishikawakatsumi.SourceKitForSafari")
+            else { return context }
 
         if let serverPath = userDefaults.string(forKey: "sourcekit-lsp.serverPath") {
             context["serverPath"] = serverPath
